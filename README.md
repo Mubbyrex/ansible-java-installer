@@ -25,7 +25,7 @@ A comprehensive and flexible Ansible role for installing Java across multiple di
 
 For development and testing:
 ```bash
-export ANSIBLE_ROLES_PATH=/workspace/upgrading_java_ansible/ansible/roles
+export ANSIBLE_ROLES_PATH=<path to role>
 ```
 
 ## Role Variables
