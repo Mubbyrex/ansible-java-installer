@@ -36,9 +36,12 @@ oracle_jdk_metadata:
 
 # Oracle URL templates
 oracle_url_templates:
-  legacy: "https://download.oracle.com/otn/java/jdk/{{ java_version }}u{{ oracle_jdk_metadata[java_major_version].build | regex_replace('-.*$', '') }}-{{ oracle_jdk_metadata[java_major_version].build | regex_replace('^[0-9]+-', '') }}/{{ oracle_jdk_metadata[java_major_version].sha_token }}/{{ java_package_type }}-{{ java_version }}u{{ oracle_jdk_metadata[java_major_version].build | regex_replace('-.*$', '') }}-{{ java_platform }}.tar.gz"
-  semver: "https://download.oracle.com/otn/java/jdk/{{ java_version }}%2B{{ oracle_jdk_metadata[java_major_version].build | regex_replace('.*\\+', '') }}/{{ oracle_jdk_metadata[java_major_version].sha_token }}/{{ java_package_type }}-{{ java_version }}_{{ java_platform }}_bin.tar.gz"
-  latest: "https://download.oracle.com/java/{{ java_major_version }}/latest/{{ java_package_type }}-{{ java_major_version }}_{{ java_platform }}_bin.tar.gz"
+  legacy: >
+    https://download.oracle.com/otn/java/jdk/{{ java_version }}u{{ oracle_jdk_metadata[java_major_version].build | regex_replace('-.*$', '') }}-{{ oracle_jdk_metadata[java_major_version].build | regex_replace('^[0-9]+-', '') }}/{{ oracle_jdk_metadata[java_major_version].sha_token }}/{{ java_package_type }}-{{ java_version }}u{{ oracle_jdk_metadata[java_major_version].build | regex_replace('-.*$', '') }}-{{ java_platform }}.tar.gz
+  semver: >
+    https://download.oracle.com/otn/java/jdk/{{ java_version }}%2B{{ oracle_jdk_metadata[java_major_version].build | regex_replace('.*\\+', '') }}/{{ oracle_jdk_metadata[java_major_version].sha_token }}/{{ java_package_type }}-{{ java_version }}_{{ java_platform }}_bin.tar.gz
+  latest: >
+    https://download.oracle.com/java/{{ java_major_version }}/latest/{{ java_package_type }}-{{ java_major_version }}_{{ java_platform }}_bin.tar.gz
 
 # Adoptium JDK metadata
 adoptium_jdk_metadata:
@@ -69,10 +72,14 @@ adoptium_jdk_metadata:
 
 # Adoptium URL templates
 adoptium_url_templates:
-  legacy: "https://github.com/adoptium/temurin{{ java_major_version }}-binaries/releases/download/jdk{{ java_version }}u{{ adoptium_jdk_metadata[java_major_version].build }}-{{ adoptium_jdk_metadata[java_major_version].build_suffix }}/OpenJDK{{ java_major_version }}U-jdk_x64_linux_hotspot_{{ java_version }}u{{ adoptium_jdk_metadata[java_major_version].build }}{{ adoptium_jdk_metadata[java_major_version].build_suffix }}.tar.gz"
-  modern: "https://github.com/adoptium/temurin{{ java_major_version }}-binaries/releases/download/jdk-{{ java_version }}.0.{{ adoptium_jdk_metadata[java_major_version].build }}%2B{{ adoptium_jdk_metadata[java_major_version].build_suffix }}/OpenJDK{{ java_major_version }}U-jdk_x64_linux_hotspot_{{ java_version }}.0.{{ adoptium_jdk_metadata[java_major_version].build }}_{{ adoptium_jdk_metadata[java_major_version].build_suffix }}.tar.gz"
-  simple: "https://github.com/adoptium/temurin{{ java_major_version }}-binaries/releases/download/jdk-{{ java_version }}%2B{{ adoptium_jdk_metadata[java_major_version].build }}/OpenJDK{{ java_major_version }}U-jdk_x64_linux_hotspot_{{ java_version }}_{{ adoptium_jdk_metadata[java_major_version].build }}.tar.gz"
-  latest: "https://github.com/adoptium/temurin{{ java_major_version }}-binaries/releases/latest/download/OpenJDK{{ java_major_version }}U-jdk_x64_linux_hotspot_{{ java_version }}_{{ adoptium_jdk_metadata[java_major_version].build }}.tar.gz"
+  legacy: >
+    https://github.com/adoptium/temurin{{ java_major_version }}-binaries/releases/download/jdk{{ java_version }}u{{ adoptium_jdk_metadata[java_major_version].build }}-{{ adoptium_jdk_metadata[java_major_version].build_suffix }}/OpenJDK{{ java_major_version }}U-jdk_x64_linux_hotspot_{{ java_version }}u{{ adoptium_jdk_metadata[java_major_version].build }}{{ adoptium_jdk_metadata[java_major_version].build_suffix }}.tar.gz
+  modern: >
+    https://github.com/adoptium/temurin{{ java_major_version }}-binaries/releases/download/jdk-{{ java_version }}.0.{{ adoptium_jdk_metadata[java_major_version].build }}%2B{{ adoptium_jdk_metadata[java_major_version].build_suffix }}/OpenJDK{{ java_major_version }}U-jdk_x64_linux_hotspot_{{ java_version }}.0.{{ adoptium_jdk_metadata[java_major_version].build }}_{{ adoptium_jdk_metadata[java_major_version].build_suffix }}.tar.gz
+  simple: >
+    https://github.com/adoptium/temurin{{ java_major_version }}-binaries/releases/download/jdk-{{ java_version }}%2B{{ adoptium_jdk_metadata[java_major_version].build }}/OpenJDK{{ java_major_version }}U-jdk_x64_linux_hotspot_{{ java_version }}_{{ adoptium_jdk_metadata[java_major_version].build }}.tar.gz
+  latest: >
+    https://github.com/adoptium/temurin{{ java_major_version }}-binaries/releases/latest/download/OpenJDK{{ java_major_version }}U-jdk_x64_linux_hotspot_{{ java_version }}_{{ adoptium_jdk_metadata[java_major_version].build }}.tar.gz"
 
 # Supported Java versions
 supported_java_versions: [8, 11, 17, 21, 23, 24]

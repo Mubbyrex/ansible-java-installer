@@ -244,7 +244,7 @@ Solution: Ensure ansible user has sudo privileges
 **Java Not Found After Installation**
 
 ```
-Solution: Source the profile or restart shell session
+Solution: Source the profile or restart ansible.builtin.shell session
 source /etc/profile
 ```
 

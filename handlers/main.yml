@@ -1,4 +1,6 @@
 - name: Reload profile
-  shell: 'source /etc/profile && echo "JAVA_HOME is now $JAVA_HOME"'
+  ansible.builtin.shell: |
+    source /etc/profile && echo "JAVA_HOME is now $JAVA_HOME"
   args:
     executable: /bin/bash
+  changed_when: false

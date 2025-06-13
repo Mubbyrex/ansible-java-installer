@@ -21,7 +21,8 @@
       changed_when: false
 
     - name: Verify JAVA_HOME is set
-      shell: source /etc/profile && echo $JAVA_HOME
+      ansible.builtin.shell: |
+        source /etc/profile && echo $JAVA_HOME
       args:
         executable: /bin/bash
       register: java_home_check

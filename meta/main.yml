@@ -15,15 +15,12 @@ galaxy_info:
   platforms:
     - name: Ubuntu
       versions:
-        - "18.04"
-        - "20.04"
-        - "22.04"
-        - "24.04"
+        - all
     - name: Debian
       versions:
-        - "10"
-        - "11"
-        - "12"
+        - buster
+        - bullseye
+        - bookworm
     - name: EL
       versions:
         - "7"
@@ -36,18 +33,13 @@ galaxy_info:
         - "37"
         - "38"
         - "39"
-    - name: CentOS
-      versions:
-        - "7"
-        - "8"
     - name: Rocky
       versions:
-        - "8"
-        - "9"
-    - name: AlmaLinux
+        - "8.0"
+        - "9.0"
+    - name: EL
       versions:
-        - "8"
-        - "9"
+        - all
 
   galaxy_tags:
     - java
@@ -60,7 +52,6 @@ galaxy_info:
     - runtime
     - automation
     - devops
-    - cross-platform
     - linux
     - rhel
     - debian
