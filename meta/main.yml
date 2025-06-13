@@ -1,0 +1,77 @@
+---
+galaxy_info:
+  author: Mubarak Ibrahim
+  namespace: mubarak
+  role_name: java_installer
+  description: >-
+    A comprehensive Ansible role for installing Java across multiple distributions.
+    Supports Oracle JDK, Adoptium OpenJDK, and system package managers with
+    flexible version management and authentication handling for restricted downloads.
+  company: DevOps Community
+  license: MIT
+
+  min_ansible_version: "2.9"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - "18.04"
+        - "20.04"
+        - "22.04"
+        - "24.04"
+    - name: Debian
+      versions:
+        - "10"
+        - "11"
+        - "12"
+    - name: EL
+      versions:
+        - "7"
+        - "8"
+        - "9"
+    - name: Fedora
+      versions:
+        - "35"
+        - "36"
+        - "37"
+        - "38"
+        - "39"
+    - name: CentOS
+      versions:
+        - "7"
+        - "8"
+    - name: Rocky
+      versions:
+        - "8"
+        - "9"
+    - name: AlmaLinux
+      versions:
+        - "8"
+        - "9"
+
+  galaxy_tags:
+    - java
+    - jdk
+    - openjdk
+    - oracle
+    - adoptium
+    - temurin
+    - development
+    - runtime
+    - automation
+    - devops
+    - cross-platform
+    - linux
+    - rhel
+    - debian
+    - ubuntu
+    - centos
+    - rocky
+    - almalinux
+
+  # Additional metadata for better discoverability
+  github_branch: main
+
+dependencies: []
+collections:
+  - community.general

@@ -1,0 +1,29 @@
+---
+- name: Prepare
+  hosts: all
+  become: false
+  tasks:
+    - name: Update package cache (Ubuntu/Debian)
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+
+    - name: Install required packages (Ubuntu/Debian)
+      apt:
+        name:
+          - curl
+          - wget
+          - tar
+          - gzip
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install required packages (RedHat/CentOS)
+      yum:
+        name:
+          - wget
+          - tar
+          - gzip
+        state: present
+      when: ansible_os_family == "RedHat"

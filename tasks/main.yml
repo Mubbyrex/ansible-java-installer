@@ -1,0 +1,392 @@
+---
+- name: Validate Java version is supported
+  fail:
+    msg: |
+      Unsupported Java version: {{ java_version }}
+      Supported versions: {{ supported_java_versions | join(', ') }}
+      Please check the documentation for supported versions.
+  when: java_major_version | int not in supported_java_versions
+
+- name: Determine download requirements
+  set_fact:
+    oracle_requires_manual: "{{ oracle_jdk_metadata[java_major_version].requires_auth | default(false) }}"
+    oracle_url_template: "{{ oracle_jdk_metadata[java_major_version].url_template | default('latest') }}"
+    adoptium_url_template: "{{ adoptium_jdk_metadata[java_major_version].url_template | default('latest') }}"
+
+- name: Generate download URL
+  set_fact:
+    jdk_download_url: >-
+      {% if java_distribution == 'oracle' %}
+        {% if oracle_requires_manual %}
+          null
+        {% else %}
+          {{ oracle_url_templates[oracle_url_template] }}
+        {% endif %}
+      {% elif java_distribution == 'adoptium' %}
+        {{ adoptium_url_templates[adoptium_url_template] }}
+      {% elif java_distribution == 'openjdk' %}
+        {{ adoptium_url_templates.latest }}
+      {% endif %}
+
+- name: Set fact - determine if manual JDK download is required
+  set_fact:
+    requires_manual_download: >-
+      {{
+        (java_distribution == 'oracle' and oracle_requires_manual)
+        or (use_custom_jdk_file | default(false) | bool)
+      }}
+
+- name: Debug - Display selected Java download URL
+  debug:
+    var: jdk_download_url
+    verbosity: 1
+
+- name: Install OpenJDK using package manager if selected
+  block:
+    - name: Ensure man directory exists (Debian)
+      file:
+        path: /usr/share/man/man1
+        state: directory
+        mode: '0755'
+      when: ansible_os_family == "Debian"
+
+    - name: Install OpenJDK on Debian-based systems
+      apt:
+        name: "openjdk-{{ java_major_version }}-jdk-headless"
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+      register: openjdk_apt_install
+
+    - name: Install OpenJDK on RedHat-based systems
+      yum:
+        name: "java-{{ java_major_version }}-openjdk-devel"
+        state: present
+      when: ansible_os_family == "RedHat"
+      register: openjdk_yum_install
+
+    - name: Set Java {{ java_major_version }} as the default alternative
+      alternatives:
+        name: java
+        path: "/usr/lib/jvm/java-{{ java_major_version }}-openjdk-amd64/bin/java"
+        priority: 1710
+      when: ansible_os_family == "Debian"
+
+    - name: Register javac for Java {{ java_major_version }}
+      alternatives:
+        name: javac
+        path: "/usr/lib/jvm/java-{{ java_major_version }}-openjdk-amd64/bin/java"
+        priority: 1710
+      when: ansible_os_family == "Debian"
+
+    - name: Find OpenJDK installation path on Debian
+      shell: readlink -f /usr/bin/java | sed 's|/bin/java||'
+      register: openjdk_path_debian
+      when: ansible_os_family == "Debian" and openjdk_apt_install is success
+      changed_when: false
+
+    - name: Find OpenJDK installation path on RedHat
+      shell: readlink -f /usr/bin/java | sed 's|/bin/java||'
+      register: openjdk_path_redhat
+      when: ansible_os_family == "RedHat" and openjdk_yum_install is success
+      changed_when: false
+
+    - name: Set JAVA_HOME for package-managed OpenJDK
+      set_fact:
+        java_home: "{{ openjdk_path_debian.stdout if ansible_os_family == 'Debian' else openjdk_path_redhat.stdout }}"
+      when: >
+        (ansible_os_family == "Debian" and openjdk_apt_install is success) or
+        (ansible_os_family == "RedHat" and openjdk_yum_install is success)
+
+  when: java_distribution == 'openjdk' and use_package_manager | bool
+
+- name: Debug - Display selected Java download URL
+  debug:
+    var: jdk_download_url
+    verbosity: 1
+
+- name: Debug - Requires manual download
+  debug:
+    var: requires_manual_download
+    verbosity: 1
+
+- name: Checks and Preparations
+  block:
+    - name: Ensure Java install directory exists
+      file:
+        path: "{{ install_path }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Check if Java {{ java_version }} is already installed
+      shell: "java -version 2>&1 | grep -E '\"{{ java_version }}\\.'"
+      register: java_check
+      failed_when: false
+      changed_when: false
+
+    - name: Output Java already installed message
+      debug:
+        msg: "Java {{ java_version }} is already installed."
+      when: java_check.rc == 0
+
+    - name: Set Java installation needed fact
+      set_fact:
+        java_install_needed: >-
+          {{
+            override_existing_jdk | default(false) | bool
+            or (java_check.rc != 0)
+          }}
+
+    - name: Debug - Java installation needed
+      debug:
+        var: java_install_needed
+        verbosity: 1
+
+    - name: Fail if manual download is required but custom_jdk_path is not provided
+      fail:
+        msg: >
+          Please manually download the JDK and provide the path
+          using the 'custom_jdk_path' variable. Example:
+          ansible-playbook playbook.yaml -e "custom_jdk_path=/path/to/jdk-{{ java_version }}_{{ java_platform }}_bin.tar.gz"
+      when: >
+        java_install_needed and
+        requires_manual_download | bool and
+        (custom_jdk_path is not defined or custom_jdk_path | length == 0)
+
+    - name: Debug - Detailed download info
+      debug:
+        msg:
+          - "Java distribution: {{ java_distribution }}"
+          - "Java version: {{ java_version }}"
+          - "Download URL: {{ jdk_download_url if not requires_manual_download else 'Manual download required' }}"
+          - "Custom JDK path: {{ custom_jdk_path | default('Not provided') }}"
+          - "Local file check path: {{ playbook_dir }}/files/jdk-{{ java_version }}_{{ java_platform }}_bin.tar.gz"
+      when: java_install_needed
+
+    - name: Check if custom JDK path exists
+      stat:
+        path: "{{ custom_jdk_path }}"
+      register: custom_jdk_file
+      delegate_to: localhost
+      become: false
+      when: java_install_needed and requires_manual_download and custom_jdk_path is defined
+
+    - name: Debug custom JDK path
+      debug:
+        msg:
+          - "Custom JDK path: {{ custom_jdk_path }}"
+          - "File exists: {{ custom_jdk_file.stat.exists if custom_jdk_file is defined else 'Not checked' }}"
+          - "File size: {{ custom_jdk_file.stat.size | default('Unknown') }}"
+      when: requires_manual_download and custom_jdk_path is defined
+
+    - name: Fail if custom JDK file does not exist
+      fail:
+        msg: |
+          The specified custom JDK file does not exist: {{ custom_jdk_path }}
+          Please ensure:
+          - The file exists at this path on the Ansible control machine
+          - The user running Ansible has permission to read this file
+      when: >
+        java_install_needed and 
+        requires_manual_download and 
+        custom_jdk_path is defined and 
+        not custom_jdk_file.stat.exists
+
+    - name: Copy manually downloaded JDK binary
+      copy:
+        src: "{{ custom_jdk_path }}"
+        dest: "{{ install_path }}/java-{{ java_distribution }}-{{ java_version }}_{{ java_platform }}.tar.gz"
+        mode: "0644"
+        owner: root
+        group: root
+      when: >
+        java_install_needed and 
+        custom_jdk_path is defined and 
+        requires_manual_download
+      register: manual_jdk_copy
+
+    - name: Debug manual JDK copy result
+      debug:
+        var: manual_jdk_copy
+      when: manual_jdk_copy is defined and java_install_needed
+      changed_when: false
+
+- name: Java Installation Block
+  block:
+    # Download JDK for versions that don't require authentication
+    - name: Download JDK binary (for non-Oracle JDK or Oracle versions that don't require auth)
+      get_url:
+        url: "{{ jdk_download_url }}"
+        dest: "{{ install_path }}/java-{{ java_distribution }}-{{ java_version }}_{{ java_platform }}.tar.gz"
+        force: yes
+        mode: "0644"
+      when: >
+        java_install_needed and
+        not requires_manual_download | bool
+      register: jdk_download
+      retries: 3
+      delay: 5
+      until: jdk_download is succeeded
+      ignore_errors: true
+
+    - name: Fail if JDK download URL is invalid or not supported
+      fail:
+        msg: >-
+          Failed to download JDK from '{{ jdk_download_url }}'. This may be due to:
+          - An unsupported Java version '{{ java_version }}'
+          - A wrong or missing URL
+          - Network or repository issues
+
+          Please verify that the Java version is supported and that the URL is correct.
+      when: >
+        java_install_needed and
+        not requires_manual_download | bool and
+        (jdk_download is failed or jdk_download_url is not defined or jdk_download_url in ['', 'null'])
+
+    - name: Check if download succeeded
+      stat:
+        path: "{{ install_path }}/java-{{ java_distribution }}-{{ java_version }}_{{ java_platform }}.tar.gz"
+      register: download_file
+      when: java_install_needed
+
+    - name: Verify downloaded file is not empty or an error page
+      shell: "file {{ install_path }}/java-{{ java_distribution }}-{{ java_version }}_{{ java_platform }}.tar.gz || true"
+      register: file_check
+      failed_when: false
+      changed_when: false
+      when: java_install_needed and download_file.stat.exists
+
+    - name: Debug file check results
+      debug:
+        msg:
+          - "File check output: {{ file_check.stdout if file_check is defined else 'Not checked' }}"
+          - "File check return code: {{ file_check.rc if file_check is defined else 'Not checked' }}"
+          - "File size: {{ download_file.stat.size if download_file.stat is defined else 'Unknown' }}"
+      when: java_install_needed and download_file.stat is defined
+
+    - name: Fail if download is not a valid archive
+      fail:
+        msg: >
+          The downloaded file is not a valid Java archive. 
+          {% if java_distribution == 'oracle' %}
+          Oracle JDK downloads typically require authentication. 
+          Please manually download the JDK from Oracle's website and provide it using the custom_jdk_path variable.
+          Example: -e "custom_jdk_path=/path/to/jdk-{{ java_version }}_{{ java_platform }}_bin.tar.gz"
+          {% else %}
+          Please check the download URL or try again later.
+          {% endif %}
+      when: >
+        java_install_needed and
+        download_file is defined and
+        download_file.stat is defined and
+        download_file.stat.exists and
+        file_check.rc != 0 and file_check.stdout is search('HTML document')
+
+    - name: Extract the JDK archive
+      unarchive:
+        src: "{{ install_path }}/java-{{ java_distribution }}-{{ java_version }}_{{ java_platform }}.tar.gz"
+        dest: "{{ install_path }}"
+        remote_src: yes
+      when: java_install_needed
+      register: jdk_extract
+
+    # --- ALWAYS LIST DIRECTORY CONTENTS EVEN IF INSTALLATION NOT NEEDED ---
+    - name: List files in installation directory
+      find:
+        paths: "{{ install_path }}"
+        file_type: directory
+      register: install_dir_contents
+
+    - name: Debug - Show install directory contents
+      debug:
+        var: install_dir_contents
+        verbosity: 1
+
+    # --- ALWAYS SEARCH FOR THE CORRECT JAVA VERSION REGARDLESS OF INSTALL FLAG ---
+    - name: Set JDK search pattern
+      set_fact:
+        jdk_search_pattern: "*jdk*{{ java_version }}*"
+
+    - name: Discover JDK install path for version {{ java_version }}
+      find:
+        paths: "{{ install_path }}"
+        patterns: "{{ jdk_search_pattern }}"
+        file_type: directory
+      register: jdk_dir
+
+    - name: Debug - Show found JDK directories
+      debug:
+        var: jdk_dir
+        verbosity: 1
+
+    - name: Fallback pattern if no JDK directory found
+      find:
+        paths: "{{ install_path }}"
+        patterns: "*jdk*"
+        file_type: directory
+      register: jdk_fallback
+      when: jdk_dir.files is undefined or jdk_dir.files | length == 0
+
+    - name: Set JAVA_HOME variable from discovered JDK dir for version {{ java_version }}
+      set_fact:
+        java_home: "{{ jdk_dir.files[0].path }}"
+      when: jdk_dir.files is defined and jdk_dir.files | length > 0
+
+    - name: Set JAVA_HOME variable from fallback if primary search failed
+      set_fact:
+        java_home: "{{ jdk_fallback.files[0].path }}"
+      when: (jdk_dir.files is undefined or jdk_dir.files | length == 0) and jdk_fallback.files is defined and jdk_fallback.files | length > 0
+
+    - name: Fail if no Java installation directory could be found
+      fail:
+        msg: "Could not determine the Java installation directory. Please check the downloaded archive and extraction process."
+      when: java_home is undefined
+
+    - name: Debug - Selected Java Home
+      debug:
+        var: java_home
+        verbosity: 1
+
+    - name: Export JAVA_HOME in /etc/profile
+      lineinfile:
+        path: /etc/profile
+        line: "{{ item }}"
+        state: present
+        backup: yes
+      loop:
+        - "export JAVA_HOME={{ java_home }}"
+        - "export PATH=$PATH:$JAVA_HOME/bin"
+      when: set_java_home | bool
+      notify: Reload profile
+
+    - name: Create symlink for java
+      file:
+        src: "{{ java_home }}/bin/java"
+        dest: /usr/bin/java
+        state: link
+        force: true
+      when: java_install_needed
+
+    - name: Create symlink for javac
+      file:
+        src: "{{ java_home }}/bin/javac"
+        dest: /usr/bin/javac
+        state: link
+        force: true
+      when: java_install_needed
+
+
+  when: not (java_distribution == 'openjdk' and use_package_manager | bool) and java_install_needed
+
+- name: Confirm Java installation
+  block:
+    - name: Confirm Java installed
+      shell: java -version
+      register: java_verify
+      changed_when: false
+
+    - name: Display Java version
+      debug:
+        var: java_verify.stderr_lines

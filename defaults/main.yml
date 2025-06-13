@@ -1,0 +1,60 @@
+---
+# defaults file for java_install
+
+# Java distribution - options: 'oracle' or 'adoptium'
+java_distribution: "oracle"
+
+# Java settings
+java_version: "21"
+java_major_version: "{{ java_version | regex_replace('^([0-9]+).*', '\\1') }}"
+java_platform: "linux-x64"
+java_package_type: "jdk"
+install_path: "/opt/java"
+set_java_home: true
+
+# Path to manually downloaded JDK tarball (required for Oracle JDK 8, 11, and 17)
+# custom_jdk_path: "/path/to/your/jdk-17_linux-x64_bin.tar.gz"
+
+# Use package manager for OpenJDK (only applicable when java_distribution is 'openjdk')
+use_package_manager: true
+
+# Directory pattern to look for after extraction
+java_directory_pattern: >-
+  {% if java_distribution == 'oracle' %}
+  jdk*{{ java_version }}*
+  {% elif java_distribution == 'adoptium' %}
+  jdk*{{ java_version }}*
+  {% endif %}
+
+# Oracle JDK specific settings
+oracle_java_builds:
+  "8": "451-b10"
+  "11": "0.21+9"
+  "17": "0.15+9"
+  "21": "35"
+  "23": "36"
+  "24": "7"
+
+oracle_java_sha_tokens:
+  "8": "8a1589aa0fe24566b4337beee47c2d29"
+  "11": "c8da8ea3a895f23cedd362132950d1c5"
+  "17": "4f092786cec841d58ae21840b10204d7"
+  "21": "267b10b14b4e5fada19aca3be3b961ce4f81f1bd3ffcd070e90a5586106125eb"
+  "24": "07096b29c65feb393972870347f36021be421a74c1800be468b3c19f04e8e943"
+
+# URL patterns for different Java versions
+oracle_java_urls:
+  legacy: "https://download.oracle.com/otn/java/jdk/{{ java_version }}u{{ oracle_java_builds[java_major_version] | regex_replace('-.*$', '') }}-{{ oracle_java_builds[java_major_version] | regex_replace('^[0-9]+-', '') }}/{{ oracle_java_sha_tokens[java_major_version] }}/{{ java_package_type }}-{{ java_version }}u{{ oracle_java_builds[java_major_version] | regex_replace('-.*$', '') }}-{{ java_platform }}.tar.gz"
+  semver: "https://download.oracle.com/otn/java/jdk/{{ java_version }}%2B{{ oracle_java_builds[java_major_version] | regex_replace('.*\\+', '') }}/{{ oracle_java_sha_tokens[java_major_version] }}/{{ java_package_type }}-{{ java_version }}_{{ java_platform }}_bin.tar.gz"
+  latest: "https://download.oracle.com/java/{{ java_major_version }}/latest/{{ java_package_type }}-{{ java_major_version }}_{{ java_platform }}_bin.tar.gz"
+
+# Adoptium specific settings
+adoptium_java_urls:
+  default: "https://github.com/adoptium/temurin{{ java_major_version }}-binaries/releases/download/jdk-{{ java_version }}/OpenJDK{{ java_major_version }}U-jdk_x64_linux_hotspot_{{ java_version }}.tar.gz"
+
+adoptium_java_builds:
+  "8": "452"
+  "11": "27"
+  "17": "15"
+  "21": "35"
+  "24": "36"

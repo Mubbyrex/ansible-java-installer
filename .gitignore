@@ -1,0 +1,28 @@
+# Ansible
+*.retry
+.ansible/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.tox/
+.molecule/
+.cache/
+.pytest_cache/
+
+# Logs
+*.log
+
+# Personal files
+inventory.ini
+host_key_checking=false
+
+venv/
