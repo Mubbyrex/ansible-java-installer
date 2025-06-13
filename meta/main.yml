@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   author: Mubarak Ibrahim
-  namespace: mubarak
+  namespace: mubbyrex
   role_name: java_installer
   description: >-
     A comprehensive Ansible role for installing Java across multiple distributions.
