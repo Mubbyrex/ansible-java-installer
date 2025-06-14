@@ -4,23 +4,23 @@
   become: false
   tasks:
     - name: Check if Java is installed
-      command: java -version
+      ansible.builtin.command: java -version
       register: java_version_output
       changed_when: false
 
     - name: Verify Java version contains expected version
-      assert:
+      ansible.builtin.assert:
         that:
           - "'21' in java_version_output.stderr"
         fail_msg: "Java 21 is not installed or not the correct version"
         success_msg: "Java 21 is correctly installed"
 
     - name: Check if javac is available
-      command: javac -version
+      ansible.builtin.command: javac -version
       register: javac_version_output
       changed_when: false
 
     - name: Display test results
-      debug:
+      ansible.builtin.debug:
         msg:
           - "✅ Java version: {{ java_version_output.stderr_lines[0] }}"

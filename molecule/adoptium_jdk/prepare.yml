@@ -4,13 +4,13 @@
   become: false
   tasks:
     - name: Update package cache (Ubuntu/Debian)
-      apt:
+      ansible.builtin.apt:
         update_cache: true
         cache_valid_time: 3600
       when: ansible_os_family == "Debian"
 
     - name: Install required packages (Ubuntu/Debian)
-      apt:
+      ansible.builtin.apt:
         name:
           - curl
           - wget
@@ -20,7 +20,7 @@
       when: ansible_os_family == "Debian"
 
     - name: Install required packages (RedHat/CentOS)
-      yum:
+      ansible.builtin.dnf:
         name:
           - wget
           - tar

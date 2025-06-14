@@ -10,5 +10,5 @@
 
   tasks:
     - name: "Include java_install role"
-      include_role:
+      ansible.builtin.include_role:
         name: "mubbyrex.java_installer"

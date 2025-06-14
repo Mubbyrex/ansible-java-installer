@@ -34,8 +34,8 @@ export ANSIBLE_ROLES_PATH=<path to role>
 
 | Variable            | Default       | Description                                         | Required |
 | ------------------- | ------------- | --------------------------------------------------- | -------- |
-| `java_distribution` | `"oracle"`    | Java distribution (`oracle`, `adoptium`, `openjdk`) | No       |
-| `java_version`      | `"21"`        | Java version to install                             | No       |
+| `java_distribution` | `"oracle"`    | Java distribution (`oracle`, `adoptium`, `openjdk`) | Yes      |
+| `java_version`      | `"21"`        | Java version to install                             | Yes      |
 | `install_path`      | `"/opt/java"` | Base installation directory                         | No       |
 | `set_java_home`     | `true`        | Configure JAVA_HOME environment variable            | No       |
 
@@ -59,7 +59,7 @@ export ANSIBLE_ROLES_PATH=<path to role>
   hosts: servers
   become: true
   roles:
-    - role: java_install
+    - role: mubbyrex.java_installer
 ```
 
 ### Oracle JDK 21 (Automatic Download)
@@ -73,7 +73,7 @@ export ANSIBLE_ROLES_PATH=<path to role>
     java_version: "21"
     install_path: "/opt/java"
   roles:
-    - role: java_install
+    - role: mubbyrex.java_installer
 ```
 
 ### Oracle JDK with Manual Download (Required for versions 8, 11, 17)
@@ -87,7 +87,7 @@ export ANSIBLE_ROLES_PATH=<path to role>
     java_version: "17"
     custom_jdk_path: "/home/user/Downloads/jdk-17_linux-x64_bin.tar.gz"
   roles:
-    - role: java_install
+    - role: mubbyrex.java_installer
 ```
 
 ### Adoptium OpenJDK
@@ -100,7 +100,7 @@ export ANSIBLE_ROLES_PATH=<path to role>
     java_distribution: "adoptium"
     java_version: "17"
   roles:
-    - role: java_install
+    - role: mubbyrex.java_installer
 ```
 
 ### OpenJDK via Package Manager (Headless)
@@ -114,7 +114,7 @@ export ANSIBLE_ROLES_PATH=<path to role>
     java_version: "11"
     use_package_manager: true
   roles:
-    - role: java_install
+    - role: mubbyrex.java_installer
 ```
 
 **Note**: Package manager installations use `openjdk-headless` packages for lightweight deployments without GUI components.
@@ -158,7 +158,7 @@ ansible-playbook site.yml -e "custom_jdk_path=/path/to/jdk-17_linux-x64_bin.tar.
   tasks:
     - name: Install Java for environment
       include_role:
-        name: java_install
+        name: mubbyrex.java_installer
       vars: "{{ java_configs[environment] }}"
 ```
 
@@ -174,7 +174,7 @@ ansible-playbook site.yml -e "custom_jdk_path=/path/to/jdk-17_linux-x64_bin.tar.
     install_path: "/usr/local/java"
     set_java_home: true
   roles:
-    - role: java_install
+    - role: mubbyrex.java_installer
 ```
 
 ## Testing
@@ -196,6 +196,7 @@ The role includes four distinct Molecule test scenarios:
 
 ```bash
 pip install molecule[docker] ansible-core
+pip install molecule-docker
 ```
 
 #### Run All Tests
